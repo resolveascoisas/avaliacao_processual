@@ -196,6 +196,15 @@
     let allClasses = []; // Array único contendo as linhas de todas as abas do Excel
     let logoBase64 = "";
 
+    // Função para remover os últimos 11 caracteres do nome da turma
+    function formatTurmaName(originalName) {
+        if (!originalName || originalName.length <= 11) {
+            return originalName;
+        }
+        // Remove os últimos 11 caracteres
+        return originalName.substring(0, originalName.length - 11);
+    }
+
     document.getElementById('logoInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -262,6 +271,7 @@
 
                     let classData = {
                         turma: row[classColName],
+                        turmaFormatada: formatTurmaName(row[classColName]), // Nome formatado sem os últimos 11 caracteres
                         alunos: alunos,
                         results: {}, // Acertos nesta turma organizados por disciplina-base
                         totalAcertos: 0,
@@ -348,7 +358,7 @@
         
         keys.forEach(k => html += `<th>${globalSubjects[k].exportName}</th>`);
         html += `   <th>Média<br>Global</th>
-                 </tr></thead><tbody>`;
+                  </tr></thead><tbody>`;
 
         // Variáveis para a Linha GERAL da Escola
         let globalAlunos = 0;
@@ -363,8 +373,9 @@
         allClasses.forEach(cls => {
             globalAlunos += cls.alunos;
             
+            // Usar o nome formatado da turma (sem os últimos 11 caracteres)
             rowsHtml += `<tr>
-                            <td class="col-text">${cls.turma}</td>
+                            <td class="col-text">${cls.turmaFormatada}</td>
                             <td>${cls.alunos}</td>`;
 
             keys.forEach(k => {
