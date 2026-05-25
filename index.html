@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Resultados AVAP - Múltiplos Arquivos</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <title>Gerador AVAP - Excel Unificado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         :root {
             --primary-color: #1e3a8a;
-            --text-color: #334155;
+            --text-color: #1e293b;
             --bg-color: #f8fafc;
-            --border-color: #e2e8f0;
+            --border-color: #cbd5e1;
         }
 
         body {
@@ -20,139 +20,103 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 100%;
             margin: auto;
             background: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
-        h1, h2, h3 { color: var(--primary-color); }
+        h1, h2, h3 { color: var(--primary-color); margin-top: 0; }
         
-        /* Controles e Inputs */
         .config-section {
             background: #f1f5f9;
             border: 1px solid var(--border-color);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
         }
 
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full-width { grid-column: span 2; }
         
         input[type="text"], input[type="number"], input[type="file"], textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            width: 100%; padding: 8px; margin-top: 4px;
+            border: 1px solid #94a3b8; border-radius: 4px;
+            box-sizing: border-box; font-family: 'Inter', sans-serif;
         }
-        
-        textarea { resize: vertical; min-height: 80px; }
+        textarea { resize: vertical; min-height: 60px; }
 
         .btn {
-            background-color: #3b82f6;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: 0.2s;
+            background-color: #3b82f6; color: white;
+            padding: 10px 20px; border: none; border-radius: 4px;
+            cursor: pointer; font-size: 14px; font-weight: 600;
         }
         .btn:hover { background-color: #2563eb; }
         .btn-success { background-color: #10b981; }
         .btn-success:hover { background-color: #059669; }
 
-        .config-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .config-table th, .config-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+        .config-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 13px; }
+        .config-table th, .config-table td { border: 1px solid #94a3b8; padding: 6px; text-align: left; }
         .config-table th { background: #e2e8f0; }
 
-        /* Estilos do Relatório (Matriz) */
-        .report-page { background: #fff; }
-        
+        /* Estilos do Relatório Compacto */
         .doc-header {
-            display: flex;
-            align-items: center;
-            border-bottom: 4px solid var(--primary-color);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            display: flex; align-items: center;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px; margin-bottom: 15px;
         }
-        .doc-logo { max-width: 120px; max-height: 120px; margin-right: 25px; object-fit: contain; }
-        .doc-titles { flex-grow: 1; }
-        .doc-title { font-size: 26px; font-weight: 700; margin: 0 0 8px 0; color: var(--primary-color); text-transform: uppercase; }
-        .doc-subtitle { font-size: 18px; font-weight: 600; color: #475569; margin: 0 0 10px 0; }
-        .doc-intro { font-size: 14px; color: #64748b; white-space: pre-wrap; line-height: 1.5; }
+        .doc-logo { max-width: 90px; max-height: 90px; margin-right: 20px; object-fit: contain; }
+        .doc-title { font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: var(--primary-color); text-transform: uppercase; }
+        .doc-subtitle { font-size: 15px; font-weight: 600; color: #475569; margin: 0 0 6px 0; }
+        .doc-intro { font-size: 12px; color: #64748b; white-space: pre-wrap; line-height: 1.4; }
 
-        .dataset-section {
-            margin-bottom: 50px;
-            page-break-inside: auto;
-        }
-        
-        .dataset-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #475569;
-            margin-bottom: 15px;
-            padding-left: 10px;
-            border-left: 4px solid var(--primary-color);
-        }
-
+        /* Tabela Matriz Super Compacta */
         .matrix-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
+            width: 100%; border-collapse: collapse; font-size: 11px; /* Fonte reduzida */
         }
-        
         .matrix-table th, .matrix-table td {
-            border: 1px solid #cbd5e1;
-            padding: 10px 6px;
-            text-align: center;
-            vertical-align: middle;
+            border: 1px solid #94a3b8;
+            padding: 4px 2px; /* Espaçamento super enxuto */
+            text-align: center; vertical-align: middle;
+            white-space: nowrap; /* Evita quebra de linha em células curtas */
         }
-
         .matrix-table thead th {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 600;
+            background-color: var(--primary-color); color: white;
+            font-weight: 600; padding: 6px 2px;
+            white-space: normal; /* Permite quebrar nome longo de disciplina */
         }
         
-        .col-text { text-align: left !important; font-weight: 600; background-color: #f8fafc; }
-        .col-total { font-weight: 700; background-color: #f1f5f9; border-left: 2px solid #94a3b8 !important; }
+        .col-text { text-align: left !important; font-weight: 600; background-color: #f8fafc; white-space: normal !important; min-width: 120px; }
+        .col-total { font-weight: 700; background-color: #f1f5f9; border-left: 2px solid #64748b !important; }
 
-        .cell-red { background-color: #fee2e2; color: #b91c1c; font-weight: 600; }
-        .cell-yellow { background-color: #fef3c7; color: #b45309; font-weight: 600; }
-        .cell-green { background-color: #d1fae5; color: #047857; font-weight: 600; }
-        .cell-empty { background-color: #f8fafc; color: #94a3b8; }
+        .cell-red { background-color: #fee2e2; color: #991b1b; font-weight: 700; }
+        .cell-yellow { background-color: #fef3c7; color: #92400e; font-weight: 700; }
+        .cell-green { background-color: #d1fae5; color: #065f46; font-weight: 700; }
+        .cell-empty { background-color: #f8fafc; color: #cbd5e1; }
 
         .row-global td {
-            border-top: 3px solid var(--primary-color);
-            border-bottom: 3px solid var(--primary-color);
-            font-size: 14px;
+            border-top: 2px solid var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            font-size: 12px; font-weight: 700;
         }
-        .row-global .col-text { background-color: #e0e7ff; color: var(--primary-color); font-weight: 700; }
+        .row-global .col-text { background-color: #e0e7ff; color: var(--primary-color); }
 
-        /* Impressão */
         @media print {
-            @page { size: landscape; margin: 15mm; }
+            @page { size: landscape; margin: 10mm; }
             body { background: white; padding: 0; }
             .no-print { display: none !important; }
-            .container { box-shadow: none; max-width: 100%; padding: 0; margin: 0; }
-            .matrix-table th, .matrix-table td { border: 1px solid #000; padding: 8px 4px; font-size: 11pt; }
+            .container { box-shadow: none; padding: 0; margin: 0; width: 100%; }
+            .matrix-table th, .matrix-table td { border: 1px solid #000; font-size: 10pt; }
             .matrix-table thead th { background-color: #e2e8f0 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
             .cell-red { background-color: #fee2e2 !important; -webkit-print-color-adjust: exact; }
             .cell-yellow { background-color: #fef3c7 !important; -webkit-print-color-adjust: exact; }
             .cell-green { background-color: #d1fae5 !important; -webkit-print-color-adjust: exact; }
-            /* Evitar quebra no meio da linha da tabela */
             tr { page-break-inside: avoid; }
         }
     </style>
@@ -161,45 +125,49 @@
 
 <div class="container">
     <div class="no-print">
-        <h1>Painel de Configuração - AVAP (Lote)</h1>
+        <h1>Configuração AVAP - Excel Unificado</h1>
         
         <div class="config-section">
-            <h2>1. Cabeçalho do Relatório</h2>
             <div class="grid-2">
                 <div>
                     <label><strong>Logotipo (Opcional):</strong></label>
                     <input type="file" id="logoInput" accept="image/*" />
                 </div>
                 <div>
-                    <label><strong>Título Secundário / Escola:</strong></label>
-                    <input type="text" id="docSubtitle" placeholder="Será preenchido automaticamente se encontrado" />
+                    <label><strong>Arquivo Excel (.xlsx):</strong></label>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls" />
                 </div>
                 <div class="full-width">
-                    <label><strong>Título Principal:</strong></label>
-                    <input type="text" id="docTitle" value="Resultados da Avaliação de Verificação de Aprendizagem Processual" />
+                    <label><strong>Título e Escola:</strong></label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="docTitle" value="Resultados da Avaliação de Aprendizagem" style="flex: 2;"/>
+                        <input type="text" id="docSubtitle" placeholder="Nome da Escola..." style="flex: 1;"/>
+                    </div>
                 </div>
                 <div class="full-width">
-                    <label><strong>Nota Introdutória / Metodologia (Opcional):</strong></label>
-                    <textarea id="docIntro">O cálculo da média total por sala utilizou a metodologia de média simples baseada no volume de acertos pelo número de itens avaliados de cada estudante. A média global de cada segmento considera o contingente total de alunos.</textarea>
+                    <label><strong>Metodologia:</strong></label>
+                    <textarea id="docIntro">O cálculo consolida os dados de todas as turmas. Salas com maior contingente de alunos ou disciplinas com mais questões exercem impacto proporcionalmente maior no resultado final, garantindo uma média global ponderada precisa.</textarea>
                 </div>
             </div>
-            
-            <hr style="margin: 20px 0; border-color: #cbd5e1;">
-            
-            <h2>2. Base de Dados</h2>
-            <p style="font-size: 13px; color: #64748b; margin-top: 0;">Selecione vários arquivos de uma vez (ex: EFAF, 1ª e 2ª EM, 3ª EM).</p>
-            <input type="file" id="csvFileInput" accept=".csv" multiple />
         </div>
     </div>
 
     <div id="configArea" class="config-section no-print" style="display: none;">
-        <h2>3. Ajustes de Leitura Consolidados</h2>
+        <h3>Disciplinas Encontradas no Excel</h3>
+        <p style="font-size:12px; margin-top:-10px; color:#64748b;">
+            Renomeie as colunas como desejar. O sistema já detectou e calculou internamente o peso de questões de cada disciplina por turma.
+        </p>
         
         <div class="grid-2">
             <div>
-                <h3>Semaforização (%)</h3>
+                <table class="config-table" id="subjectsTable">
+                    <thead><tr><th>Nome Original</th><th>Nome Exportado</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div>
                 <table class="config-table">
-                    <tr><th>Condição</th><th>Valor</th></tr>
+                    <tr><th colspan="2">Semaforização (%)</th></tr>
                     <tr>
                         <td>Abaixo de (Vermelho)</td>
                         <td><input type="number" id="limitRed" value="50"></td>
@@ -209,33 +177,23 @@
                         <td><input type="number" id="limitGreen" value="70"></td>
                     </tr>
                 </table>
-                <p style="font-size: 12px; color: #64748b;">* Valores intermediários ficarão em amarelo.</p>
+                <div style="text-align: right; margin-top: 15px;">
+                    <button class="btn btn-success" onclick="generateUnifiedReport()">Gerar Tabela Única</button>
+                </div>
             </div>
-
-            <div>
-                <h3>Componentes Curriculares</h3>
-                <table class="config-table" id="subjectsTable">
-                    <thead><tr><th>Nome no Relatório</th><th>Qtd. Questões</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div style="text-align: right; margin-top: 20px;">
-            <button class="btn btn-success" onclick="generateMatrixReport()">Gerar Matrizes de Resultados</button>
         </div>
     </div>
 
-    <div id="actionsArea" class="no-print" style="display:none; text-align: right; margin-bottom: 20px;">
-        <button class="btn" onclick="window.print()">🖨️ Exportar / Imprimir em PDF</button>
+    <div id="actionsArea" class="no-print" style="display:none; text-align: right; margin-bottom: 15px;">
+        <button class="btn" onclick="window.print()">🖨️ Imprimir / Gerar PDF</button>
     </div>
 
     <div id="reportsArea"></div>
 </div>
 
 <script>
-    let datasets = []; // Vai guardar informações de múltiplos arquivos
-    let globalComponentsMap = {}; // Dicionário de todas as disciplinas encontradas
+    let globalSubjects = {}; // Guarda as disciplinas únicas
+    let allClasses = []; // Array único contendo as linhas de todas as abas do Excel
     let logoBase64 = "";
 
     document.getElementById('logoInput').addEventListener('change', function(e) {
@@ -246,75 +204,107 @@
         reader.readAsDataURL(file);
     });
 
-    document.getElementById('csvFileInput').addEventListener('change', async function(e) {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
+    document.getElementById('excelFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        datasets = [];
-        globalComponentsMap = {}; 
-        
-        // Ordenação alfabética dos arquivos para manter consistência na geração
-        files.sort((a, b) => a.name.localeCompare(b.name));
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            
+            globalSubjects = {};
+            allClasses = [];
 
-        for (let file of files) {
-            const result = await new Promise(resolve => {
-                Papa.parse(file, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: resolve
-                });
-            });
+            // Ler cada aba do Excel
+            workbook.SheetNames.forEach(sheetName => {
+                const sheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, {defval: ""});
+                if (jsonData.length === 0) return;
 
-            const headers = result.meta.fields;
-            datasets.push({
-                fileName: file.name,
-                data: result.data,
-                headers: headers,
-                classColName: headers[0] // A primeira coluna sempre assume a turma
-            });
+                const headers = Object.keys(jsonData[0]);
+                const classColName = headers[0]; // Assume que a coluna 0 é a de Turma
 
-            // Extrair e acumular disciplinas únicas no mapa global
-            headers.forEach(h => {
-                if (h === headers[0] || h.includes("Total de Alunos") || h.includes("Total de Acertos") || h.includes("Escola")) return;
-                
-                if (!globalComponentsMap[h]) {
+                // Mapear cabeçalhos desta aba
+                let sheetSubjectMap = {}; 
+                headers.forEach(h => {
+                    if (h === classColName || h.includes("Total de Alunos") || h.includes("Total de Acertos") || h.includes("Escola")) return;
+                    
+                    // Extrair nome da disciplina e questões
                     const matchName = h.match(/Acertos em (.*?)\s*\(/);
-                    let subjectName = matchName ? matchName[1].trim() : h;
-
+                    let baseName = matchName ? matchName[1].trim() : h.trim();
+                    
                     let qCount = 1;
                     const matchQ = h.match(/\((Questões.*?)\)/);
                     if (matchQ) qCount = (matchQ[1].match(/,/g) || []).length + 1;
 
-                    globalComponentsMap[h] = { exportName: subjectName, qCount: qCount };
+                    sheetSubjectMap[h] = { baseName, qCount };
+                    
+                    // Registrar no mapa global (para virar coluna unificada)
+                    if (!globalSubjects[baseName]) {
+                        globalSubjects[baseName] = { exportName: baseName };
+                    }
+                });
+
+                // Tentar preencher o nome da escola com base na aba atual
+                if(!document.getElementById('docSubtitle').value) {
+                    const rowEscola = jsonData.find(r => r["Escola"]);
+                    if (rowEscola && rowEscola["Escola"]) {
+                        document.getElementById('docSubtitle').value = "Escola: " + rowEscola["Escola"];
+                    }
                 }
+
+                // Processar as linhas (Turmas) desta aba
+                jsonData.forEach(row => {
+                    if (!row[classColName]) return;
+                    const alunos = parseInt(row["Total de Alunos"]) || 0;
+                    if (alunos === 0) return;
+
+                    let classData = {
+                        turma: row[classColName],
+                        alunos: alunos,
+                        results: {}, // Acertos nesta turma organizados por disciplina-base
+                        totalAcertos: 0,
+                        totalPossiveis: 0
+                    };
+
+                    // Extrair resultados baseando no mapeamento local
+                    for (let rawHeader in sheetSubjectMap) {
+                        const info = sheetSubjectMap[rawHeader];
+                        const val = row[rawHeader];
+                        
+                        if (val !== undefined && val.toString().trim() !== "") {
+                            const acertos = parseInt(val) || 0;
+                            const possiveis = alunos * info.qCount; // Peso real da disciplina pra esta sala
+                            
+                            classData.results[info.baseName] = {
+                                acertos: acertos,
+                                possiveis: possiveis
+                            };
+                            classData.totalAcertos += acertos;
+                            classData.totalPossiveis += possiveis;
+                        }
+                    }
+                    allClasses.push(classData);
+                });
             });
-        }
 
-        renderConfigTable();
-        
-        // Tentar buscar o nome da escola do primeiro arquivo válido
-        for (let ds of datasets) {
-            const row = ds.data.find(r => r["Escola"]);
-            if (row && row["Escola"]) {
-                document.getElementById('docSubtitle').value = "Escola: " + row["Escola"];
-                break;
-            }
-        }
-
-        document.getElementById('configArea').style.display = 'block';
+            renderSubjectsConfig();
+            document.getElementById('configArea').style.display = 'block';
+        };
+        reader.readAsArrayBuffer(file);
     });
 
-    function renderConfigTable() {
+    function renderSubjectsConfig() {
         const tbody = document.querySelector('#subjectsTable tbody');
         tbody.innerHTML = '';
-        const keys = Object.keys(globalComponentsMap);
+        const keys = Object.keys(globalSubjects);
         
         keys.forEach((key, index) => {
-            const comp = globalComponentsMap[key];
             tbody.innerHTML += `
                 <tr>
-                    <td><input type="text" id="name_${index}" value="${comp.exportName}"></td>
-                    <td><input type="number" id="qtd_${index}" value="${comp.qCount}" min="1"></td>
+                    <td style="font-size:12px; font-weight:600;">${key}</td>
+                    <td><input type="text" id="name_${index}" value="${globalSubjects[key].exportName}" style="padding:4px; font-size:12px;"></td>
                 </tr>
             `;
         });
@@ -326,12 +316,7 @@
         return "cell-yellow";
     }
 
-    function formatFileName(name) {
-        // Limpa o nome do arquivo para servir como título do segmento (Remove .csv e coisas estranhas)
-        return name.replace('.csv', '').replace(/^[^-]+-\s*/, '').trim().toUpperCase();
-    }
-
-    function generateMatrixReport() {
+    function generateUnifiedReport() {
         const reportsArea = document.getElementById('reportsArea');
         reportsArea.innerHTML = '';
 
@@ -341,120 +326,92 @@
         const limitRed = parseFloat(document.getElementById('limitRed').value);
         const limitGreen = parseFloat(document.getElementById('limitGreen').value);
 
-        // Atualizar o dicionário global de disciplinas com o que o usuário editou na tela
-        const keys = Object.keys(globalComponentsMap);
+        // Atualiza nomes customizados
+        const keys = Object.keys(globalSubjects);
         keys.forEach((key, index) => {
-            globalComponentsMap[key].exportName = document.getElementById(`name_${index}`).value;
-            globalComponentsMap[key].qCount = parseInt(document.getElementById(`qtd_${index}`).value);
+            globalSubjects[key].exportName = document.getElementById(`name_${index}`).value;
         });
 
-        // --- Montagem do Cabeçalho Único do Documento ---
-        let html = `<div class="report-page">`;
-        html += `<div class="doc-header">`;
+        // HTML do Cabeçalho
+        let html = `<div class="doc-header">`;
         if (logoBase64) html += `<img src="${logoBase64}" class="doc-logo" alt="Logo">`;
-        html += `<div class="doc-titles">
+        html += `<div>
                     <h1 class="doc-title">${docTitle}</h1>
                     ${docSubtitle ? `<h2 class="doc-subtitle">${docSubtitle}</h2>` : ''}
                     ${docIntro ? `<div class="doc-intro">${docIntro}</div>` : ''}
                  </div></div>`;
 
-        // --- Loop pelos Arquivos (Datasets) para Gerar as Matrizes ---
-        datasets.forEach((ds) => {
-            // Filtrar apenas as disciplinas que existem NESTE arquivo
-            const fileComponents = ds.headers.filter(h => globalComponentsMap[h]);
+        // Iniciando Tabela Compacta
+        html += `<table class="matrix-table"><thead><tr>
+                    <th style="min-width: 150px;">Turma</th>
+                    <th>Total<br>Alunos</th>`;
+        
+        keys.forEach(k => html += `<th>${globalSubjects[k].exportName}</th>`);
+        html += `   <th>Média<br>Global</th>
+                 </tr></thead><tbody>`;
+
+        // Variáveis para a Linha GERAL da Escola
+        let globalAlunos = 0;
+        let globalAcertos = 0;
+        let globalPossiveis = 0;
+        let resumoComp = {};
+        keys.forEach(k => resumoComp[k] = { acertos: 0, possiveis: 0 });
+
+        let rowsHtml = "";
+
+        // Processar linhas
+        allClasses.forEach(cls => {
+            globalAlunos += cls.alunos;
             
-            // Variáveis para Média Global do Segmento/Arquivo
-            let segAlunos = 0;
-            let segAcertos = 0;
-            let segPossiveis = 0;
-            let resumoComp = {};
-            fileComponents.forEach(h => resumoComp[h] = { acertos: 0, possivel: 0 });
+            rowsHtml += `<tr>
+                            <td class="col-text">${cls.turma}</td>
+                            <td>${cls.alunos}</td>`;
 
-            // Calcular Acertos Totais e montar as linhas das Turmas
-            let rowsHtml = "";
-
-            ds.data.forEach(row => {
-                if (!row[ds.classColName]) return;
-                const alunos = parseInt(row["Total de Alunos"]) || 0;
-                if (alunos === 0) return;
-
-                segAlunos += alunos;
-                let rowAcertos = 0;
-                let rowPossiveis = 0;
-
-                rowsHtml += `<tr>
-                                <td class="col-text">${row[ds.classColName]}</td>
-                                <td>${alunos}</td>`;
-
-                fileComponents.forEach(h => {
-                    const compConf = globalComponentsMap[h];
-                    const valStr = row[h];
-                    
-                    if (valStr === undefined || valStr.toString().trim() === "") {
-                        rowsHtml += `<td class="cell-empty">-</td>`;
-                    } else {
-                        const acertos = parseInt(valStr) || 0;
-                        const possivel = alunos * compConf.qCount;
-                        
-                        resumoComp[h].acertos += acertos;
-                        resumoComp[h].possivel += possivel;
-                        rowAcertos += acertos;
-                        rowPossiveis += possivel;
-                        
-                        let pct = possivel > 0 ? (acertos / possivel) * 100 : 0;
-                        rowsHtml += `<td class="${getSemaforoClass(pct, limitRed, limitGreen)}">${pct.toFixed(1).replace('.', ',')}%</td>`;
-                    }
-                });
-
-                let rowPct = rowPossiveis > 0 ? (rowAcertos / rowPossiveis) * 100 : 0;
-                rowsHtml += `<td class="col-total ${getSemaforoClass(rowPct, limitRed, limitGreen)}">${rowPct.toFixed(1).replace('.', ',')}%</td>`;
-                rowsHtml += `</tr>`;
-            });
-
-            // Se não encontrou alunos, pula a tabela
-            if (segAlunos === 0) return;
-
-            // Construir o HTML da Tabela deste arquivo
-            let segmentTitle = formatFileName(ds.fileName);
-            html += `<div class="dataset-section">
-                        <div class="dataset-title">Segmento: ${segmentTitle}</div>
-                        <table class="matrix-table">
-                            <thead><tr>
-                                <th>Turma</th>
-                                <th>Total de Alunos</th>`;
-            fileComponents.forEach(h => html += `<th>${globalComponentsMap[h].exportName}</th>`);
-            html += `           <th>Total</th>
-                            </tr></thead><tbody>`;
-
-            // Linha Global do Segmento
-            html += `<tr class="row-global">
-                        <td class="col-text">GERAL (${segmentTitle})</td>
-                        <td style="font-weight:bold;">${segAlunos}</td>`;
-            
-            fileComponents.forEach(h => {
-                const sumAcertos = resumoComp[h].acertos;
-                const sumPossivel = resumoComp[h].possivel;
-                if(sumPossivel === 0) {
-                    html += `<td class="cell-empty">-</td>`;
+            keys.forEach(k => {
+                const res = cls.results[k];
+                if (!res) {
+                    rowsHtml += `<td class="cell-empty">-</td>`; // Sala não teve essa disciplina
                 } else {
-                    let pct = (sumAcertos / sumPossivel) * 100;
-                    html += `<td class="${getSemaforoClass(pct, limitRed, limitGreen)}">${pct.toFixed(1).replace('.', ',')}%</td>`;
+                    resumoComp[k].acertos += res.acertos;
+                    resumoComp[k].possiveis += res.possiveis;
+                    
+                    let pct = res.possiveis > 0 ? (res.acertos / res.possiveis) * 100 : 0;
+                    rowsHtml += `<td class="${getSemaforoClass(pct, limitRed, limitGreen)}">${pct.toFixed(1).replace('.', ',')}%</td>`;
                 }
-                segAcertos += sumAcertos;
-                segPossiveis += sumPossivel;
             });
 
-            let segPct = segPossiveis > 0 ? (segAcertos / segPossiveis) * 100 : 0;
-            html += `<td class="col-total ${getSemaforoClass(segPct, limitRed, limitGreen)}">${segPct.toFixed(1).replace('.', ',')}%</td>`;
-            html += `</tr>`;
-
-            // Adicionar as linhas das turmas
-            html += rowsHtml;
-
-            html += `</tbody></table></div>`;
+            // Total da sala individual
+            globalAcertos += cls.totalAcertos;
+            globalPossiveis += cls.totalPossiveis;
+            let rowPct = cls.totalPossiveis > 0 ? (cls.totalAcertos / cls.totalPossiveis) * 100 : 0;
+            
+            rowsHtml += `<td class="col-total ${getSemaforoClass(rowPct, limitRed, limitGreen)}">${rowPct.toFixed(1).replace('.', ',')}%</td>`;
+            rowsHtml += `</tr>`;
         });
 
-        html += `</div>`; // Fecha report-page
+        // Linha Global (Calculada com ponderação real de alunos e questões)
+        html += `<tr class="row-global">
+                    <td class="col-text">GERAL ESCOLA</td>
+                    <td>${globalAlunos}</td>`;
+        
+        keys.forEach(k => {
+            const sumAcertos = resumoComp[k].acertos;
+            const sumPossiveis = resumoComp[k].possiveis;
+            if (sumPossiveis === 0) {
+                html += `<td class="cell-empty">-</td>`;
+            } else {
+                let pct = (sumAcertos / sumPossiveis) * 100;
+                html += `<td class="${getSemaforoClass(pct, limitRed, limitGreen)}">${pct.toFixed(1).replace('.', ',')}%</td>`;
+            }
+        });
+
+        let geralPct = globalPossiveis > 0 ? (globalAcertos / globalPossiveis) * 100 : 0;
+        html += `<td class="col-total ${getSemaforoClass(geralPct, limitRed, limitGreen)}">${geralPct.toFixed(1).replace('.', ',')}%</td>`;
+        html += `</tr>`;
+
+        // Acrescentar as turmas e fechar
+        html += rowsHtml;
+        html += `</tbody></table>`;
         reportsArea.innerHTML = html;
 
         document.getElementById('actionsArea').style.display = 'block';
