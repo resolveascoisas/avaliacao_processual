@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Relatórios Escolares Avançado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --bg-color: #ecf0f1;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 { color: var(--primary-color); }
+        .config-section {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        input[type="text"], input[type="number"], input[type="file"], textarea {
+            padding: 8px;
+            width: 90%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .btn:hover { background-color: #2980b9; }
+        .btn-success { background-color: #27ae60; }
+        .btn-success:hover { background-color: #219150; }
+        
+        .color-box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+
+        /* Estilos do Relatório Gerado */
+        .report-page {
+            background: #fff;
+            padding: 20px;
+        }
+        .document-header {
+            display: flex;
+            align-items: center;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .document-logo {
+            max-width: 150px;
+            max-height: 120px;
+            margin-right: 20px;
+        }
+        .document-title-area {
+            flex-grow: 1;
+        }
+        .document-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+        }
+        .document-intro {
+            font-size: 16px;
+            color: #555;
+            white-space: pre-wrap;
+        }
+        
+        .report-card {
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            background: #fff;
+            page-break-inside: avoid;
+        }
+        .report-card.general-view {
+            border-color: #8e44ad;
+            background-color: #fdfbfd;
+        }
+        .report-card.general-view th {
+            background-color: #8e44ad;
+        }
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Esconder áreas na hora de imprimir o PDF */
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print { display: none !important; }
+            .container { box-shadow: none; max-width: 100%; border: none; padding: 0; }
+            .report-page { padding: 0; }
+            .report-card { border: 1px solid #000; box-shadow: none; }
+            .report-card.general-view { border: 2px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print">
+        <h1>Gerador de Relatórios</h1>
+        <div class="config-section">
+            <h2>1. Dados do Documento</h2>
+            <div class="config-grid">
+                <div>
+                    <label><strong>Logotipo (Opcional):</strong></label><br>
+                    <input type="file" id="logoInput" accept="image/*" />
+                </div>
+                <div>
+                    <label><strong>Título do Documento:</strong></label><br>
+                    <input type="text" id="docTitle" value="Relatório Geral de Desempenho" />
+                </div>
+                <div class="full-width">
+                    <label><strong>Texto Introdutório:</strong></label><br>
+                    <textarea id="docIntro" placeholder="Digite aqui uma breve introdução que aparecerá abaixo do título no relatório..."></textarea>
+                </div>
+            </div>
+            
+            <hr style="margin: 20px 0;">
+            
+            <h2>2. Arquivo de Dados</h2>
+            <input type="file" id="csvFileInput" accept=".csv" />
+        </div>
+    </div>
+
+    <div id="configArea" class="config-section no-print" style="display: none;">
+        <h2>3. Ajustes de Leitura</h2>
+        
+        <div class="config-grid">
+            <div>
+                <h3>Semaforização (% de Acerto)</h3>
+                <table>
+                    <tr>
+                        <th>Cor</th>
+                        <th>Condição</th>
+                    </tr>
+                    <tr>
+                        <td><span class="color-box" style="background:#e74c3c;"></span> Vermelho</td>
+                        <td>Abaixo de <input type="number" id="limitRed" value="50" style="width: 60px;"> %</td>
+                    </tr>
+                    <tr>
+                        <td><span class="color-box" style="background:#f1c40f;"></span> Amarelo</td>
+                        <td>Entre Limites</td>
+                    </tr>
+                    <tr>
+                        <td><span class="color-box" style="background:#2ecc71;"></span> Verde</td>
+                        <td>Acima de <input type="number" id="limitGreen" value="70" style="width: 60px;"> %</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div>
+                <h3>Componentes Curriculares</h3>
+                <p><small>Edite os nomes e a quantidade de questões identificadas.</small></p>
+                <table id="subjectsTable">
+                    <thead>
+                        <tr>
+                            <th>Nome de Exportação</th>
+                            <th>Qtd. Questões</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div style="text-align: right;">
+            <button class="btn btn-success" onclick="generateReports()">Gerar Relatórios</button>
+        </div>
+    </div>
+
+    <div id="actionsArea" class="no-print" style="display:none; text-align: right; margin-bottom: 20px;">
+        <button class="btn" onclick="window.print()">Exportar / Imprimir em PDF</button>
+    </div>
+
+    <div id="reportsArea"></div>
+</div>
+
+<script>
+    let csvData = [];
+    let csvHeaders = [];
+    let componentsData = [];
+    let classColName = "";
+    let logoBase64 = "";
+
+    // Leitura do Logo
+    document.getElementById('logoInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            logoBase64 = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Leitura do CSV
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                csvData = results.data;
+                csvHeaders = results.meta.fields;
+                processHeaders(csvHeaders);
+                document.getElementById('configArea').style.display = 'block';
+            }
+        });
+    });
+
+    // Processar cabeçalhos
+    function processHeaders(headers) {
+        componentsData = [];
+        classColName = headers[0]; 
+
+        const tbody = document.querySelector('#subjectsTable tbody');
+        tbody.innerHTML = '';
+
+        headers.forEach((header, index) => {
+            if (index === 0 || header.includes("Total de Alunos") || header.includes("Total de Acertos") || header.includes("Escola")) {
+                return;
+            }
+
+            const matchName = header.match(/Acertos em (.*?)\s*\(/);
+            let subjectName = matchName ? matchName[1].trim() : header;
+
+            let qCount = 1;
+            const matchQ = header.match(/\((Questões.*?)\)/);
+            if (matchQ) {
+                qCount = (matchQ[1].match(/,/g) || []).length + 1;
+            }
+
+            componentsData.push({ originalName: header, exportName: subjectName, qCount: qCount });
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" id="name_${index}" value="${subjectName}"></td>
+                <td><input type="number" id="qtd_${index}" value="${qCount}" min="1"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function generateReports() {
+        const reportsArea = document.getElementById('reportsArea');
+        reportsArea.innerHTML = '';
+
+        // Pegar configurações de texto
+        const docTitle = document.getElementById('docTitle').value || "Relatório de Desempenho";
+        const docIntro = document.getElementById('docIntro').value;
+        const limitRed = parseFloat(document.getElementById('limitRed').value);
+        const limitGreen = parseFloat(document.getElementById('limitGreen').value);
+
+        // Atualizar componentes baseados nos inputs
+        componentsData.forEach(comp => {
+            const headerIndex = csvHeaders.indexOf(comp.originalName);
+            comp.exportName = document.getElementById(`name_${headerIndex}`).value;
+            comp.qCount = parseInt(document.getElementById(`qtd_${headerIndex}`).value);
+        });
+
+        // Iniciar página do relatório e Cabeçalho (Header)
+        let html = `<div class="report-page">`;
+        
+        html += `<div class="document-header">`;
+        if (logoBase64) {
+            html += `<img src="${logoBase64}" class="document-logo" alt="Logo">`;
+        }
+        html += `<div class="document-title-area">
+                    <h1 class="document-title">${docTitle}</h1>`;
+        if (docIntro) {
+            html += `<div class="document-intro">${docIntro}</div>`;
+        }
+        html += `</div></div>`; // Fim document-header
+
+        // --- CÁLCULO DA VISUALIZAÇÃO GERAL (TODA A ESCOLA) ---
+        let geralTotalAlunos = 0;
+        let geralAcertosGlobais = 0;
+        let geralQuestoesGlobais = 0;
+        
+        // Estrutura para somar acertos e alunos por componente
+        let resumoComponentes = {};
+        componentsData.forEach(comp => {
+            resumoComponentes[comp.originalName] = { acertos: 0, totalPossivel: 0 };
+        });
+
+        csvData.forEach(row => {
+            if (!row[classColName]) return;
+            const alunosTurma = parseInt(row["Total de Alunos"]) || 0;
+            if (alunosTurma === 0) return;
+
+            geralTotalAlunos += alunosTurma;
+
+            componentsData.forEach(comp => {
+                const acertos = parseInt(row[comp.originalName]) || 0;
+                const possivelTurma = alunosTurma * comp.qCount;
+                
+                resumoComponentes[comp.originalName].acertos += acertos;
+                resumoComponentes[comp.originalName].totalPossivel += possivelTurma;
+                
+                geralAcertosGlobais += acertos;
+                geralQuestoesGlobais += possivelTurma;
+            });
+        });
+
+        // Renderizar Card da Visualização Geral
+        html += `
+            <div class="report-card general-view">
+                <div class="report-header" style="border-bottom-color: #8e44ad;">
+                    <div>
+                        <h2 style="color: #8e44ad; margin:0;">VISUALIZAÇÃO GERAL (TODAS AS TURMAS)</h2>
+                    </div>
+                    <div style="text-align:right;">
+                        <h2 style="color:#7f8c8d; margin:0;">Total de Alunos (Soma): ${geralTotalAlunos}</h2>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Componente Curricular</th>
+                            <th>Total de Acertos (Geral)</th>
+                            <th>Desempenho Geral (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        componentsData.forEach(comp => {
+            const sumAcertos = resumoComponentes[comp.originalName].acertos;
+            const sumPossivel = resumoComponentes[comp.originalName].totalPossivel;
+            
+            let porcentagem = 0;
+            if (sumPossivel > 0) porcentagem = (sumAcertos / sumPossivel) * 100;
+
+            let bgColor = "#f1c40f"; let textColor = "#000";
+            if (porcentagem < limitRed) { bgColor = "#e74c3c"; textColor = "#fff"; }
+            else if (porcentagem >= limitGreen) { bgColor = "#2ecc71"; textColor = "#fff"; }
+
+            html += `
+                <tr>
+                    <td style="text-align:left; font-weight:bold;">${comp.exportName}</td>
+                    <td>${sumAcertos}</td>
+                    <td style="background-color: ${bgColor}; color: ${textColor}; font-weight: bold;">
+                        ${porcentagem.toFixed(2).replace('.', ',')}%
+                    </td>
+                </tr>
+            `;
+        });
+
+        let pctGlobal = 0;
+        if (geralQuestoesGlobais > 0) pctGlobal = (geralAcertosGlobais / geralQuestoesGlobais) * 100;
+
+        html += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #ecf0f1;">
+                            <td style="text-align:left; font-weight:bold; font-size:1.1em; color:#8e44ad;">MÉDIA GLOBAL DA ESCOLA</td>
+                            <td style="font-weight:bold;">${geralAcertosGlobais}</td>
+                            <td style="font-weight:bold; font-size:1.1em;">${pctGlobal.toFixed(2).replace('.', ',')}%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <hr style="margin: 40px 0; border: 1px dashed #ccc;" class="no-print">
+        `;
+
+
+        // --- CÁLCULO DAS TURMAS INDIVIDUAIS ---
+        csvData.forEach(row => {
+            if (!row[classColName]) return;
+            const totalAlunos = parseInt(row["Total de Alunos"]) || 0;
+            if (totalAlunos === 0) return; 
+
+            const escola = row["Escola"] || "Não informada";
+            const turma = row[classColName];
+
+            html += `
+                <div class="report-card">
+                    <div class="report-header">
+                        <div>
+                            <h2 style="margin:0;">Turma: ${turma}</h2>
+                            <p style="margin:5px 0 0 0;"><strong>Escola:</strong> ${escola}</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <h2 style="color:#7f8c8d; margin:0;">Total de Alunos: ${totalAlunos}</h2>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Componente Curricular</th>
+                                <th>Total de Acertos (Sala)</th>
+                                <th>Desempenho Geral (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            let overallAcertos = 0;
+            let overallQuestoesPossiveis = 0;
+
+            componentsData.forEach(comp => {
+                const acertos = parseInt(row[comp.originalName]) || 0;
+                const totalPossivel = totalAlunos * comp.qCount;
+                
+                let porcentagem = 0;
+                if (totalPossivel > 0) porcentagem = (acertos / totalPossivel) * 100;
+
+                overallAcertos += acertos;
+                overallQuestoesPossiveis += totalPossivel;
+
+                let bgColor = "#f1c40f"; let textColor = "#000";
+                if (porcentagem < limitRed) { bgColor = "#e74c3c"; textColor = "#fff"; }
+                else if (porcentagem >= limitGreen) { bgColor = "#2ecc71"; textColor = "#fff"; }
+
+                html += `
+                    <tr>
+                        <td style="text-align:left; font-weight:bold;">${comp.exportName}</td>
+                        <td>${acertos}</td>
+                        <td style="background-color: ${bgColor}; color: ${textColor}; font-weight: bold;">
+                            ${porcentagem.toFixed(2).replace('.', ',')}%
+                        </td>
+                    </tr>
+                `;
+            });
+
+            let overallPorcentagem = 0;
+            if (overallQuestoesPossiveis > 0) overallPorcentagem = (overallAcertos / overallQuestoesPossiveis) * 100;
+
+            html += `
+                        </tbody>
+                        <tfoot>
+                            <tr style="background-color: #ecf0f1;">
+                                <td style="text-align:left; font-weight:bold; font-size:1.1em;">RESULTADO GLOBAL DA TURMA</td>
+                                <td style="font-weight:bold;">${overallAcertos}</td>
+                                <td style="font-weight:bold; font-size:1.1em;">${overallPorcentagem.toFixed(2).replace('.', ',')}%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+        });
+
+        html += `</div>`; // Fechar .report-page
+        reportsArea.innerHTML = html;
+
+        // Mostrar botão de impressão
+        document.getElementById('actionsArea').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
