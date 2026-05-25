@@ -3,7 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador AVAP - Excel Unificado</title>
+    <title>Gerad<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador AVAP - Alta Intensidade</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --bg-color: #f8fafc;
+            /* Cores de alto contraste e fortes */
+            --color-red: #dc2626;
+            --color-yellow: #ca8a04;
+            --color-green: #16a34a;
+        }
+
+        body { font-family: sans-serif; background: var(--bg-color); padding: 20px; }
+        .container { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        /* Cores Fortes Aplicadas */
+        .cell-red { background-color: var(--color-red) !important; color: white !important; font-weight: 800; }
+        .cell-yellow { background-color: var(--color-yellow) !important; color: white !important; font-weight: 800; }
+        .cell-green { background-color: var(--color-green) !important; color: white !important; font-weight: 800; }
+        
+        .matrix-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
+        .matrix-table th, .matrix-table td { border: 1px solid #475569; padding: 6px; text-align: center; }
+        .matrix-table thead th { background: #334155; color: white; }
+        .col-text { text-align: left !important; font-weight: 700; background: #e2e8f0; }
+        
+        .btn { padding: 10px 20px; background: #2563eb; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print">
+        <h1>Configuração de Alta Intensidade</h1>
+        <p>Selecione <strong>todos os seus arquivos Excel</strong> (.xlsx) de uma vez:</p>
+        <input type="file" id="excelFiles" accept=".xlsx" multiple />
+        <div id="configArea" style="margin-top:20px; display:none;">
+            <button class="btn" onclick="processarTudo()">Gerar Relatório com Cores Fortes</button>
+        </div>
+    </div>
+    <div id="reportsArea"></div>
+</div>
+
+<script>
+    let dadosUnificados = [];
+    let disciplinasUnicas = new Set();
+
+    document.getElementById('excelFiles').addEventListener('change', function(e) {
+        if(e.target.files.length > 0) document.getElementById('configArea').style.display = 'block';
+    });
+
+    async function processarTudo() {
+        const files = Array.from(document.getElementById('excelFiles').files);
+        dadosUnificados = [];
+        disciplinasUnicas = new Set();
+
+        for (let file of files) {
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(data, {type: 'array'});
+            
+            wb.SheetNames.forEach(name => {
+                const sheet = XLSX.utils.sheet_to_json(wb.Sheets[name]);
+                sheet.forEach(row => {
+                    if(!row["Total de Alunos"]) return;
+                    
+                    let rowData = { turma: row[Object.keys(row)[0]], alunos: row["Total de Alunos"], disc: {} };
+                    
+                    Object.keys(row).forEach(key => {
+                        if(key.includes("Acertos em")) {
+                            let nomeDisc = key.split('(')[0].replace('Acertos em', '').trim();
+                            disciplinasUnicas.add(nomeDisc);
+                            
+                            // Extrai qts questões (simplificado)
+                            let qts = (key.match(/,/g) || []).length + 1;
+                            rowData.disc[nomeDisc] = { acertos: row[key], possivel: row["Total de Alunos"] * qts };
+                        }
+                    });
+                    dadosUnificados.push(rowData);
+                });
+            });
+        }
+        renderizar();
+    }
+
+    function renderizar() {
+        let html = `<table class="matrix-table"><thead><tr><th>Turma</th><th>Alunos</th>`;
+        let dispArray = Array.from(disciplinasUnicas);
+        dispArray.forEach(d => html += `<th>${d}</th>`);
+        html += `<th>Média</th></tr></thead><tbody>`;
+
+        dadosUnificados.forEach(d => {
+            html += `<tr><td class="col-text">${d.turma}</td><td>${d.alunos}</td>`;
+            let tAcertos = 0, tPossivel = 0;
+            
+            dispArray.forEach(disc => {
+                if(d.disc[disc]) {
+                    let pct = (d.disc[disc].acertos / d.disc[disc].possivel) * 100;
+                    tAcertos += d.disc[disc].acertos;
+                    tPossivel += d.disc[disc].possivel;
+                    let classe = pct < 50 ? 'cell-red' : (pct < 70 ? 'cell-yellow' : 'cell-green');
+                    html += `<td class="${classe}">${pct.toFixed(0)}%</td>`;
+                } else {
+                    html += `<td>-</td>`;
+                }
+            });
+            let mPct = (tAcertos/tPossivel)*100;
+            html += `<td>${mPct.toFixed(0)}%</td></tr>`;
+        });
+        html += `</tbody></table>`;
+        document.getElementById('reportsArea').innerHTML = html;
+    }
+</script>
+</body>
+</html>or AVAP - Excel Unificado</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
