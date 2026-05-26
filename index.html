@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador AVAP - Excel Unificado</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
@@ -56,10 +57,13 @@
             background-color: #3b82f6; color: white;
             padding: 10px 20px; border: none; border-radius: 4px;
             cursor: pointer; font-size: 14px; font-weight: 600;
+            margin: 5px;
         }
         .btn:hover { background-color: #2563eb; }
         .btn-success { background-color: #10b981; }
         .btn-success:hover { background-color: #059669; }
+        .btn-pdf { background-color: #dc2626; }
+        .btn-pdf:hover { background-color: #b91c1c; }
 
         .config-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 13px; }
         .config-table th, .config-table td { border: 1px solid #94a3b8; padding: 6px; text-align: left; }
@@ -122,6 +126,22 @@
         }
         .row-global .col-text { background-color: #e0e7ff; color: var(--primary-color); }
 
+        /* Estilo para o nome do arquivo */
+        .filename-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .filename-input-group input {
+            flex: 1;
+        }
+        .filename-preview {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
         @media print {
             @page { size: landscape; margin: 10mm; }
             body { background: white; padding: 0; }
@@ -180,6 +200,14 @@
                     <label><strong>Metodologia:</strong></label>
                     <textarea id="docIntro">O cálculo consolida os dados de todas as turmas. Salas com maior contingente de alunos ou disciplinas com mais questões exercem impacto proporcionalmente maior no resultado final, garantindo uma média global ponderada precisa.</textarea>
                 </div>
+                <div class="full-width">
+                    <label><strong>Nome do Arquivo PDF:</strong></label>
+                    <div class="filename-input-group">
+                        <input type="text" id="pdfFilename" placeholder="Nome da escola" style="flex: 1;">
+                        <span style="font-weight: 600;"> - RESULTADO AVAP 2º BIM</span>
+                    </div>
+                    <div class="filename-preview" id="filenamePreview"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -217,7 +245,8 @@
     </div>
 
     <div id="actionsArea" class="no-print" style="display:none; text-align: right; margin-bottom: 15px;">
-        <button class="btn" onclick="window.print()">🖨️ Imprimir / Gerar PDF</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn btn-pdf" onclick="saveAsPDF()">💾 Salvar como PDF</button>
     </div>
 
     <div id="reportsArea"></div>
@@ -227,6 +256,7 @@
     let globalSubjects = {}; // Guarda as disciplinas únicas
     let allClasses = []; // Array único contendo as linhas de todas as abas do Excel
     let logoBase64 = "";
+    let currentExcelFileName = "";
 
     // Função para remover os últimos 11 caracteres do nome da turma
     function formatTurmaName(originalName) {
@@ -237,6 +267,48 @@
         return originalName.substring(0, originalName.length - 11);
     }
 
+    // Função para extrair nome da escola do arquivo
+    function extractSchoolNameFromFile(filename) {
+        if (!filename) return "";
+        // Remove a extensão do arquivo
+        let nameWithoutExt = filename.replace(/\.(xlsx|xls)$/i, "");
+        // Remove caracteres especiais e espaços extras
+        nameWithoutExt = nameWithoutExt.replace(/[^\w\s\u00C0-\u00FF-]/g, "");
+        // Capitaliza palavras (opcional)
+        nameWithoutExt = nameWithoutExt.replace(/\b\w/g, char => char.toUpperCase());
+        return nameWithoutExt;
+    }
+
+    // Função para atualizar preview do nome do arquivo
+    function updateFilenamePreview() {
+        const schoolName = document.getElementById('pdfFilename').value;
+        const fullName = schoolName ? `${schoolName} - RESULTADO AVAP 2º BIM` : " - RESULTADO AVAP 2º BIM";
+        document.getElementById('filenamePreview').innerHTML = `📄 Nome completo: <strong>${fullName}.pdf</strong>`;
+    }
+
+    // Salvar como PDF usando html2pdf
+    function saveAsPDF() {
+        const element = document.getElementById('reportsArea');
+        const schoolName = document.getElementById('pdfFilename').value;
+        
+        if (!schoolName) {
+            alert('Por favor, insira o nome da escola para gerar o PDF!');
+            return;
+        }
+        
+        const fileName = `${schoolName} - RESULTADO AVAP 2º BIM.pdf`;
+        
+        const opt = {
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: fileName,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, letterRendering: true, useCORS: true },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+        };
+        
+        html2pdf().set(opt).from(element).save();
+    }
+
     document.getElementById('logoInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -245,9 +317,23 @@
         reader.readAsDataURL(file);
     });
 
+    document.getElementById('pdfFilename').addEventListener('input', updateFilenamePreview);
+
     document.getElementById('excelFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
+
+        currentExcelFileName = file.name;
+        const schoolName = extractSchoolNameFromFile(currentExcelFileName);
+        
+        // Preencher o campo do nome do arquivo PDF
+        document.getElementById('pdfFilename').value = schoolName;
+        updateFilenamePreview();
+        
+        // Também preencher o subtítulo se estiver vazio
+        if (!document.getElementById('docSubtitle').value) {
+            document.getElementById('docSubtitle').value = `Escola: ${schoolName}`;
+        }
 
         const reader = new FileReader();
         reader.onload = function(e) {
