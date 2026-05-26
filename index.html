@@ -95,9 +95,24 @@
         .col-text { text-align: left !important; font-weight: 600; background-color: #f8fafc; white-space: normal !important; min-width: 120px; }
         .col-total { font-weight: 700; background-color: #f1f5f9; border-left: 2px solid #64748b !important; }
 
-        .cell-red { background-color: #fee2e2; color: #991b1b; font-weight: 700; }
-        .cell-yellow { background-color: #fef3c7; color: #92400e; font-weight: 700; }
-        .cell-green { background-color: #d1fae5; color: #065f46; font-weight: 700; }
+        /* Cores vibrantes do semáforo */
+        .cell-red { 
+            background-color: #ff1744 !important; 
+            color: #ffffff !important; 
+            font-weight: 700;
+            text-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+        .cell-yellow { 
+            background-color: #ffea00 !important; 
+            color: #000000 !important; 
+            font-weight: 700;
+        }
+        .cell-green { 
+            background-color: #00e676 !important; 
+            color: #000000 !important; 
+            font-weight: 700;
+            text-shadow: 0 0 1px rgba(255,255,255,0.5);
+        }
         .cell-empty { background-color: #f8fafc; color: #cbd5e1; }
 
         .row-global td {
@@ -114,9 +129,26 @@
             .container { box-shadow: none; padding: 0; margin: 0; width: 100%; }
             .matrix-table th, .matrix-table td { border: 1px solid #000; font-size: 10pt; }
             .matrix-table thead th { background-color: #e2e8f0 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
-            .cell-red { background-color: #fee2e2 !important; -webkit-print-color-adjust: exact; }
-            .cell-yellow { background-color: #fef3c7 !important; -webkit-print-color-adjust: exact; }
-            .cell-green { background-color: #d1fae5 !important; -webkit-print-color-adjust: exact; }
+            
+            /* Cores vibrantes também na impressão */
+            .cell-red { 
+                background-color: #ff1744 !important; 
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .cell-yellow { 
+                background-color: #ffea00 !important; 
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .cell-green { 
+                background-color: #00e676 !important; 
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             tr { page-break-inside: avoid; }
         }
     </style>
