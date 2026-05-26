@@ -74,6 +74,7 @@
             display: flex; align-items: center;
             border-bottom: 3px solid var(--primary-color);
             padding-bottom: 15px; margin-bottom: 15px;
+            page-break-inside: avoid;
         }
         .doc-logo { max-width: 90px; max-height: 90px; margin-right: 20px; object-fit: contain; }
         .doc-title { font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: var(--primary-color); text-transform: uppercase; }
@@ -82,18 +83,18 @@
 
         /* Tabela Matriz Super Compacta */
         .matrix-table {
-            width: 100%; border-collapse: collapse; font-size: 11px; /* Fonte reduzida */
+            width: 100%; border-collapse: collapse; font-size: 11px;
         }
         .matrix-table th, .matrix-table td {
             border: 1px solid #94a3b8;
-            padding: 4px 2px; /* Espaçamento super enxuto */
+            padding: 4px 2px;
             text-align: center; vertical-align: middle;
-            white-space: nowrap; /* Evita quebra de linha em células curtas */
+            white-space: nowrap;
         }
         .matrix-table thead th {
             background-color: var(--primary-color); color: white;
             font-weight: 600; padding: 6px 2px;
-            white-space: normal; /* Permite quebrar nome longo de disciplina */
+            white-space: normal;
         }
         
         .col-text { text-align: left !important; font-weight: 600; background-color: #f8fafc; white-space: normal !important; min-width: 120px; }
@@ -126,21 +127,15 @@
         }
         .row-global .col-text { background-color: #e0e7ff; color: var(--primary-color); }
 
-        /* Estilo para o nome do arquivo */
         .filename-input-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 10px;
+            display: flex; gap: 10px; align-items: center; margin-top: 10px;
         }
-        .filename-input-group input {
-            flex: 1;
-        }
-        .filename-preview {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 5px;
-        }
+        .filename-input-group input { flex: 1; }
+        .filename-preview { font-size: 12px; color: #64748b; margin-top: 5px; }
+
+        /* Controle rígido de quebra de páginas para o HTML2PDF e Impressão */
+        .matrix-table tr { page-break-inside: avoid !important; }
+        .matrix-table thead { display: table-header-group; }
 
         @media print {
             @page { size: landscape; margin: 10mm; }
@@ -150,26 +145,18 @@
             .matrix-table th, .matrix-table td { border: 1px solid #000; font-size: 10pt; }
             .matrix-table thead th { background-color: #e2e8f0 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
             
-            /* Cores vibrantes também na impressão */
             .cell-red { 
-                background-color: #ff1744 !important; 
-                color: #ffffff !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                background-color: #ff1744 !important; color: #ffffff !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
             .cell-yellow { 
-                background-color: #ffea00 !important; 
-                color: #000000 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                background-color: #ffea00 !important; color: #000000 !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
             .cell-green { 
-                background-color: #00e676 !important; 
-                color: #000000 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                background-color: #00e676 !important; color: #000000 !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
-            tr { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -253,40 +240,33 @@
 </div>
 
 <script>
-    let globalSubjects = {}; // Guarda as disciplinas únicas
-    let allClasses = []; // Array único contendo as linhas de todas as abas do Excel
+    let globalSubjects = {}; 
+    let allClasses = []; 
     let logoBase64 = "";
     let currentExcelFileName = "";
 
-    // Função para remover os últimos 11 caracteres do nome da turma
     function formatTurmaName(originalName) {
         if (!originalName || originalName.length <= 11) {
             return originalName;
         }
-        // Remove os últimos 11 caracteres
         return originalName.substring(0, originalName.length - 11);
     }
 
-    // Função para extrair nome da escola do arquivo
     function extractSchoolNameFromFile(filename) {
         if (!filename) return "";
-        // Remove a extensão do arquivo
-        let nameWithoutExt = filename.replace(/\.(xlsx|xls)$/i, "");
-        // Remove caracteres especiais e espaços extras
+        let nameWithoutExt = filename.replace(/\.[^/.]+$/, ""); // Trata melhor qualquer tamanho de extensão (.xlsx, .xls)
         nameWithoutExt = nameWithoutExt.replace(/[^\w\s\u00C0-\u00FF-]/g, "");
-        // Capitaliza palavras (opcional)
         nameWithoutExt = nameWithoutExt.replace(/\b\w/g, char => char.toUpperCase());
-        return nameWithoutExt;
+        return nameWithoutExt.trim();
     }
 
-    // Função para atualizar preview do nome do arquivo
     function updateFilenamePreview() {
         const schoolName = document.getElementById('pdfFilename').value;
         const fullName = schoolName ? `${schoolName} - RESULTADO AVAP 2º BIM` : " - RESULTADO AVAP 2º BIM";
         document.getElementById('filenamePreview').innerHTML = `📄 Nome completo: <strong>${fullName}.pdf</strong>`;
     }
 
-    // Salvar como PDF usando html2pdf
+    // Geração otimizada com tratamento nativo de quebra de página do html2pdf
     function saveAsPDF() {
         const element = document.getElementById('reportsArea');
         const schoolName = document.getElementById('pdfFilename').value;
@@ -299,11 +279,12 @@
         const fileName = `${schoolName} - RESULTADO AVAP 2º BIM.pdf`;
         
         const opt = {
-            margin: [0.5, 0.5, 0.5, 0.5],
+            margin: [0.4, 0.4, 0.4, 0.4],
             filename: fileName,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, letterRendering: true, useCORS: true },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+            pagebreak: { mode: ['avoid-all', 'css'] } // Impede quebras de linhas ao meio de forma inteligente
         };
         
         html2pdf().set(opt).from(element).save();
@@ -326,11 +307,9 @@
         currentExcelFileName = file.name;
         const schoolName = extractSchoolNameFromFile(currentExcelFileName);
         
-        // Preencher o campo do nome do arquivo PDF
         document.getElementById('pdfFilename').value = schoolName;
         updateFilenamePreview();
         
-        // Também preencher o subtítulo se estiver vazio
         if (!document.getElementById('docSubtitle').value) {
             document.getElementById('docSubtitle').value = `Escola: ${schoolName}`;
         }
@@ -343,21 +322,18 @@
             globalSubjects = {};
             allClasses = [];
 
-            // Ler cada aba do Excel
             workbook.SheetNames.forEach(sheetName => {
                 const sheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(sheet, {defval: ""});
                 if (jsonData.length === 0) return;
 
                 const headers = Object.keys(jsonData[0]);
-                const classColName = headers[0]; // Assume que a coluna 0 é a de Turma
+                const classColName = headers[0]; 
 
-                // Mapear cabeçalhos desta aba
                 let sheetSubjectMap = {}; 
                 headers.forEach(h => {
                     if (h === classColName || h.includes("Total de Alunos") || h.includes("Total de Acertos") || h.includes("Escola")) return;
                     
-                    // Extrair nome da disciplina e questões
                     const matchName = h.match(/Acertos em (.*?)\s*\(/);
                     let baseName = matchName ? matchName[1].trim() : h.trim();
                     
@@ -367,13 +343,11 @@
 
                     sheetSubjectMap[h] = { baseName, qCount };
                     
-                    // Registrar no mapa global (para virar coluna unificada)
                     if (!globalSubjects[baseName]) {
                         globalSubjects[baseName] = { exportName: baseName };
                     }
                 });
 
-                // Tentar preencher o nome da escola com base na aba atual
                 if(!document.getElementById('docSubtitle').value) {
                     const rowEscola = jsonData.find(r => r["Escola"]);
                     if (rowEscola && rowEscola["Escola"]) {
@@ -381,7 +355,6 @@
                     }
                 }
 
-                // Processar as linhas (Turmas) desta aba
                 jsonData.forEach(row => {
                     if (!row[classColName]) return;
                     const alunos = parseInt(row["Total de Alunos"]) || 0;
@@ -389,21 +362,20 @@
 
                     let classData = {
                         turma: row[classColName],
-                        turmaFormatada: formatTurmaName(row[classColName]), // Nome formatado sem os últimos 11 caracteres
+                        turmaFormatada: formatTurmaName(row[classColName]), 
                         alunos: alunos,
-                        results: {}, // Acertos nesta turma organizados por disciplina-base
+                        results: {}, 
                         totalAcertos: 0,
                         totalPossiveis: 0
                     };
 
-                    // Extrair resultados baseando no mapeamento local
                     for (let rawHeader in sheetSubjectMap) {
                         const info = sheetSubjectMap[rawHeader];
                         const val = row[rawHeader];
                         
                         if (val !== undefined && val.toString().trim() !== "") {
                             const acertos = parseInt(val) || 0;
-                            const possiveis = alunos * info.qCount; // Peso real da disciplina pra esta sala
+                            const possiveis = alunos * info.qCount; 
                             
                             classData.results[info.baseName] = {
                                 acertos: acertos,
@@ -454,13 +426,11 @@
         const limitRed = parseFloat(document.getElementById('limitRed').value);
         const limitGreen = parseFloat(document.getElementById('limitGreen').value);
 
-        // Atualiza nomes customizados
         const keys = Object.keys(globalSubjects);
         keys.forEach((key, index) => {
             globalSubjects[key].exportName = document.getElementById(`name_${index}`).value;
         });
 
-        // HTML do Cabeçalho
         let html = `<div class="doc-header">`;
         if (logoBase64) html += `<img src="${logoBase64}" class="doc-logo" alt="Logo">`;
         html += `<div>
@@ -469,7 +439,6 @@
                     ${docIntro ? `<div class="doc-intro">${docIntro}</div>` : ''}
                  </div></div>`;
 
-        // Iniciando Tabela Compacta
         html += `<table class="matrix-table"><thead><tr>
                     <th style="min-width: 150px;">Turma</th>
                     <th>Total<br>Alunos</th>`;
@@ -478,7 +447,6 @@
         html += `   <th>Média<br>Global</th>
                   </tr></thead><tbody>`;
 
-        // Variáveis para a Linha GERAL da Escola
         let globalAlunos = 0;
         let globalAcertos = 0;
         let globalPossiveis = 0;
@@ -487,11 +455,9 @@
 
         let rowsHtml = "";
 
-        // Processar linhas
         allClasses.forEach(cls => {
             globalAlunos += cls.alunos;
             
-            // Usar o nome formatado da turma (sem os últimos 11 caracteres)
             rowsHtml += `<tr>
                             <td class="col-text">${cls.turmaFormatada}</td>
                             <td>${cls.alunos}</td>`;
@@ -499,7 +465,7 @@
             keys.forEach(k => {
                 const res = cls.results[k];
                 if (!res) {
-                    rowsHtml += `<td class="cell-empty">-</td>`; // Sala não teve essa disciplina
+                    rowsHtml += `<td class="cell-empty">-</td>`; 
                 } else {
                     resumoComp[k].acertos += res.acertos;
                     resumoComp[k].possiveis += res.possiveis;
@@ -509,7 +475,6 @@
                 }
             });
 
-            // Total da sala individual
             globalAcertos += cls.totalAcertos;
             globalPossiveis += cls.totalPossiveis;
             let rowPct = cls.totalPossiveis > 0 ? (cls.totalAcertos / cls.totalPossiveis) * 100 : 0;
@@ -518,7 +483,6 @@
             rowsHtml += `</tr>`;
         });
 
-        // Linha Global (Calculada com ponderação real de alunos e questões)
         html += `<tr class="row-global">
                     <td class="col-text">GERAL ESCOLA</td>
                     <td>${globalAlunos}</td>`;
@@ -538,7 +502,6 @@
         html += `<td class="col-total ${getSemaforoClass(geralPct, limitRed, limitGreen)}">${geralPct.toFixed(1).replace('.', ',')}%</td>`;
         html += `</tr>`;
 
-        // Acrescentar as turmas e fechar
         html += rowsHtml;
         html += `</tbody></table>`;
         reportsArea.innerHTML = html;
