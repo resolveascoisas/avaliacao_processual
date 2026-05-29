@@ -179,7 +179,7 @@
                 <div class="full-width">
                     <label><strong>Título e Escola:</strong></label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="docTitle" value="Resultados da Avaliação de Aprendizagem" style="flex: 2;"/>
+                        <input type="text" id="docTitle" value="2º Bimestre - Consolidado dos Resultados da Avaliação de Verificação de Aprendizagem Processual" style="flex: 2;"/>
                         <input type="text" id="docSubtitle" placeholder="Nome da Escola..." style="flex: 1;"/>
                     </div>
                 </div>
@@ -311,7 +311,7 @@
         updateFilenamePreview();
         
         if (!document.getElementById('docSubtitle').value) {
-            document.getElementById('docSubtitle').value = `Escola: ${schoolName}`;
+            document.getElementById('docSubtitle').value = `UE - ${schoolName}`;
         }
 
         const reader = new FileReader();
